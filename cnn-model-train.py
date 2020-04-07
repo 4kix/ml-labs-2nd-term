@@ -1,5 +1,5 @@
 from keras.datasets import mnist
-from keras.models import Model
+from keras.models import Sequential
 from keras.layers import Input, Convolution2D, MaxPooling2D, Dense, Dropout, Flatten
 from keras.utils import np_utils
 
@@ -50,25 +50,19 @@ X_test /= 255 # Normalise data to [0, 1] range
 Y_train = np_utils.to_categorical(y_train, num_classes) # One-hot encode the labels
 Y_test = np_utils.to_categorical(y_test, num_classes) # One-hot encode the labels
 
-
-inp = Input(shape=(height, width, depth))
-# Conv [32] -> Conv [32] -> Pool (with dropout on the pooling layer)
-conv_1 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(inp)
-conv_2 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_1)
-pool_1 = MaxPooling2D(pool_size=(pool_size, pool_size), data_format="channels_first")(conv_2)
-drop_1 = Dropout(drop_prob_1)(pool_1)
-# Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
-conv_3 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(drop_1)
-conv_4 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_3)
-pool_2 = MaxPooling2D(pool_size=(pool_size, pool_size), data_format="channels_first")(conv_4)
-drop_2 = Dropout(drop_prob_1)(pool_2)
-# Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
-flat = Flatten()(drop_2)
-hidden = Dense(hidden_size, activation='relu')(flat)
-drop_3 = Dropout(drop_prob_2)(hidden)
-out = Dense(num_classes, activation='softmax')(drop_3)
-
-model = Model(input=inp, output=out)
+model = Sequential()
+model.add(Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu'))
+model.add(Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu'))
+model.add(MaxPooling2D(pool_size=(pool_size, pool_size), data_format="channels_first"))
+model.add(Dropout(drop_prob_1))
+model.add(Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu'))
+model.add(Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu'))
+model.add(MaxPooling2D(pool_size=(pool_size, pool_size), data_format="channels_first"))
+model.add(Dropout(drop_prob_1))
+model.add(Flatten())
+model.add(Dense(hidden_size, activation='relu'))
+model.add(Dropout(drop_prob_2))
+model.add(Dense(num_classes, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', # using the cross-entropy loss function
               optimizer='adam', # using the Adam optimiser
