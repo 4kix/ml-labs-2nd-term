@@ -76,8 +76,8 @@ X_test_gs /= 255 # Normalise data to [0, 1] range
 
 y_train[y_train==10] = 0
 y_test[y_test==10] = 0
-# Y_train = np_utils.to_categorical(y_train) # One-hot encode the labels
-# Y_test = np_utils.to_categorical(y_test) # One-hot encode the labels
+Y_train = np_utils.to_categorical(y_train) # One-hot encode the labels
+Y_test = np_utils.to_categorical(y_test) # One-hot encode the labels
 
 model = Sequential()
 model.add(Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu'))
@@ -93,11 +93,11 @@ model.add(Dense(hidden_size, activation='relu'))
 model.add(Dropout(drop_prob_2))
 model.add(Dense(num_classes, activation='softmax'))
 
-model.compile(loss='sparse_categorical_crossentropy', # using the cross-entropy loss function
+model.compile(loss='categorical_crossentropy', # using the cross-entropy loss function
               optimizer='adam', # using the Adam optimiser
               metrics=['accuracy']) # reporting the accuracy
 
-model.fit(X_train_gs, y_train,
+model.fit(X_train_gs, Y_train,
           batch_size=batch_size, nb_epoch=num_epochs,
           verbose=1, validation_split=0.1) # ...holding out 10% of the data for validation
 model.evaluate(X_test_gs, y_test, verbose=1) # Evaluate the trained model on the test set!
