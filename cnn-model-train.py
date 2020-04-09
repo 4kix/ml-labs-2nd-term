@@ -99,5 +99,16 @@ model.compile(loss='categorical_crossentropy', # using the cross-entropy loss fu
 
 model.fit(X_train_gs, Y_train,
           batch_size=batch_size, nb_epoch=num_epochs,
-          verbose=1, validation_split=0.1) # ...holding out 10% of the data for validation
-model.evaluate(X_test_gs, y_test, verbose=1) # Evaluate the trained model on the test set!
+          verbose=2, validation_split=0.1) # ...holding out 10% of the data for validation
+score = model.evaluate(X_test_gs, Y_test, verbose=2) # Evaluate the trained model on the test set!
+print('Test accuracy: {:.4f}', score[1])
+print('Test loss: {:.4f}', score[0])
+
+model.save('recognizer_model.h5')
+del model
+
+# test load model and evaluate again
+model = load_model('recognizer_model.h5')
+score = model.evaluate(X_test_gs, Y_test, verbose=2)
+print('Test accuracy: {:.4f}', score[1])
+print('Test loss: {:.4f}', score[0])
