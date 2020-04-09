@@ -1,6 +1,7 @@
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Input, Convolution2D, MaxPooling2D, Dense, Dropout, Flatten
+from keras.models import load_model
 from keras.utils import np_utils
 from scipy.io import loadmat
 
@@ -24,7 +25,7 @@ tfback._get_available_gpus = _get_available_gpus
 
 
 
-batch_size = 32
+batch_size = 128
 num_epochs = 20
 kernel_size = 3
 pool_size = 2
@@ -32,7 +33,7 @@ conv_depth_1 = 32
 conv_depth_2 = 64
 drop_prob_1 = 0.25
 drop_prob_2 = 0.5
-hidden_size = 512
+hidden_size = 1024
 
 # num_train = 60000
 # num_test = 10000
