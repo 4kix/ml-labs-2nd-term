@@ -36,30 +36,60 @@ print('Validation set: ', X_val.shape, y_val.shape)
 print('Test set: ', X_test.shape, y_test.shape)
 
 batch_size = 256
-num_hidden_unit = 1024
+num_hidden_unit_1 = 1024
+num_hidden_unit_2 = 512
+num_hidden_unit_3 = 256
+num_hidden_unit_4 = 128
+
+learning_rate = 0.4
+input_size = img_size * img_size
+num_steps = 4400
 
 graph = tf.Graph()
 with graph.as_default():
-    X_train_tf = tf.placeholder(tf.float32, shape=(img_size * img_size, batch_size))
+    X_train_tf = tf.placeholder(tf.float32, shape=(input_size, batch_size))
     y_train_tf = tf.placeholder(tf.float32, shape=(num_labels, batch_size))
     X_val_tf = tf.constant(X_val)
     X_test_tf = tf.constant(X_test)
 
-    W1 = tf.Variable(tf.truncated_normal([num_hidden_unit, img_size * img_size]))
-    b1 = tf.Variable(tf.zeros([num_hidden_unit, 1]))
-    W2 = tf.Variable(tf.truncated_normal([num_labels, num_hidden_unit]))
-    b2 = tf.Variable(tf.zeros([num_labels, 1]))
+    W1 = tf.Variable(tf.truncated_normal([num_hidden_unit_1, input_size], stddev=np.sqrt(2.0 / input_size)))
+    b1 = tf.Variable(tf.zeros([num_hidden_unit_1, 1]))
+    W2 = tf.Variable(tf.truncated_normal([num_hidden_unit_2, num_hidden_unit_1], stddev=np.sqrt(2.0 / num_hidden_unit_1)))
+    b2 = tf.Variable(tf.zeros([num_hidden_unit_2, 1]))
+    W3 = tf.Variable(tf.truncated_normal([num_hidden_unit_3, num_hidden_unit_2], stddev=np.sqrt(2.0 / num_hidden_unit_2)))
+    b3 = tf.Variable(tf.zeros([num_hidden_unit_3, 1]))
+    W4 = tf.Variable(tf.truncated_normal([num_hidden_unit_4, num_hidden_unit_3], stddev=np.sqrt(2.0 / num_hidden_unit_3)))
+    b4 = tf.Variable(tf.zeros([num_hidden_unit_4, 1]))
+    W5 = tf.Variable(tf.truncated_normal([num_labels, num_hidden_unit_4], stddev=np.sqrt(2.0 / num_hidden_unit_4)))
+    b5 = tf.Variable(tf.zeros([num_labels, 1]))
 
-    logits = tf.matmul(W2, tf.nn.relu(tf.matmul(W1, X_train_tf) + b1)) + b2
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.transpose(y_train_tf), logits=tf.transpose(logits)))
+    Z1 = tf.matmul(W1, X_train_tf) + b1
+    A1 = tf.nn.relu(Z1)
+    Z2 = tf.matmul(W2, A1) + b2
+    A2 = tf.nn.relu(Z2)
+    Z3 = tf.matmul(W3, A2) + b3
+    A3 = tf.nn.relu(Z3)
+    Z4 = tf.matmul(W4, A3) + b4
+    A4 = tf.nn.relu(Z4)
+    Z5 = tf.matmul(W5, A4) + b5
 
-    train_prediction = tf.nn.softmax(logits, dim=0)
-    valid_prediction = tf.nn.softmax(tf.matmul(W2, tf.nn.relu(tf.matmul(W1, X_val_tf) + b1)) + b2, dim=0)
-    test_prediction = tf.nn.softmax(tf.matmul(W2, tf.nn.relu(tf.matmul(W1, X_test_tf) + b1)) + b2, dim=0)
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.transpose(y_train_tf), logits=tf.transpose(Z5)))
 
-    optimizer = tf.train.GradientDescentOptimizer(0.4).minimize(loss)
+    train_prediction = tf.nn.softmax(Z5, dim=0)
+    y_val_prediction = tf.nn.softmax(tf.matmul(W5, tf.nn.relu(
+        tf.matmul(W4, tf.nn.relu(
+        tf.matmul(W3, tf.nn.relu(
+        tf.matmul(W2, tf.nn.relu(
+        tf.matmul(W1, X_val_tf) + b1)) + b2)) + b3)) + b4)) + b5, dim=0)
+    y_test_prediction = tf.nn.softmax(
+        tf.matmul(W5, tf.nn.relu(
+        tf.matmul(W4, tf.nn.relu(
+        tf.matmul(W3, tf.nn.relu(
+        tf.matmul(W2, tf.nn.relu(
+        tf.matmul(W1, X_test_tf) + b1)) + b2)) + b3)) + b4)) + b5, dim=0)
 
-num_steps = 10000
+    optimizer = (tf.train.GradientDescentOptimizer(learning_rate).minimize(loss))
+
 with tf.Session(graph=graph) as session:
     tf.global_variables_initializer().run()
 
@@ -69,16 +99,13 @@ with tf.Session(graph=graph) as session:
         batch_data = X_train[:, offset:(offset + batch_size)]
         batch_labels = y_train[:, offset:(offset + batch_size)]
 
-        feed_dict = {
-            X_train_tf: batch_data,
-            y_train_tf: batch_labels
-        }
+        _, l, batch_Y_pred = session.run([optimizer, loss, train_prediction], feed_dict={X_train_tf: batch_data, y_train_tf: batch_labels})
 
-        _, l, predictions = session.run([optimizer, loss, train_prediction], feed_dict=feed_dict)
-
-        if (step % 250 == 0):
+        if (step % 200 == 0):
             print("Step #{}".format(step))
-            print('Batch loss: {:.3f}. batch acc: {:.1f}%, Valid acc: {:.1f}%.'
-                  .format(l, compute_accuracy(predictions, batch_labels), compute_accuracy(valid_prediction.eval(), y_val)))
+            print('Minibatch loss: {:.3f}. batch accuracy: {:.1f}%, Valid accuracy: {:.1f}%.' \
+                  .format( l, compute_accuracy(batch_Y_pred, batch_labels), compute_accuracy(y_val_prediction.eval(), y_val)))
 
-    print('Test acc: {:.1f}%'.format(compute_accuracy(test_prediction.eval(), y_test)))
+    print('Test accuracy: {:.1f}%'.format(compute_accuracy(y_test_prediction.eval(), y_test)))
+
+
