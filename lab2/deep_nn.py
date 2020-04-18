@@ -41,13 +41,14 @@ num_hidden_unit_2 = 512
 num_hidden_unit_3 = 256
 num_hidden_unit_4 = 128
 
-learning_rate = 0.5
+learning_rate = 0.4
 input_size = img_size * img_size
 num_steps = 10000
 lmbda = 1e-3
 
 graph = tf.Graph()
 with graph.as_default():
+    global_step = tf.Variable(0)
     X_train_tf = tf.placeholder(tf.float32, shape=(input_size, batch_size))
     y_train_tf = tf.placeholder(tf.float32, shape=(num_labels, batch_size))
     X_val_tf = tf.constant(X_val)
@@ -65,7 +66,8 @@ with graph.as_default():
     b5 = tf.Variable(tf.zeros([num_labels, 1]))
 
     Z1 = tf.matmul(W1, X_train_tf) + b1
-    A1 = tf.nn.dropout(tf.nn.relu(Z1), 0.25)
+    # A1 = tf.nn.dropout(tf.nn.relu(Z1), 0.25)
+    A1 = tf.nn.relu(Z1)
     Z2 = tf.matmul(W2, A1) + b2
     A2 = tf.nn.relu(Z2)
     Z3 = tf.matmul(W3, A2) + b3
@@ -75,7 +77,7 @@ with graph.as_default():
     Z5 = tf.matmul(W5, A4) + b5
 
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.transpose(y_train_tf), logits=tf.transpose(Z5)))
-    loss += lmbda * (tf.nn.l2_loss(W1) + tf.nn.l2_loss(W2) + tf.nn.l2_loss(W3) + tf.nn.l2_loss(W4) + tf.nn.l2_loss(W5))
+    # loss += lmbda * (tf.nn.l2_loss(W1) + tf.nn.l2_loss(W2) + tf.nn.l2_loss(W3) + tf.nn.l2_loss(W4) + tf.nn.l2_loss(W5))
 
 
     train_prediction = tf.nn.softmax(Z5, dim=0)
@@ -91,7 +93,8 @@ with graph.as_default():
         tf.matmul(W2, tf.nn.relu(
         tf.matmul(W1, X_test_tf) + b1)) + b2)) + b3)) + b4)) + b5, dim=0)
 
-    optimizer = (tf.train.GradientDescentOptimizer(learning_rate).minimize(loss))
+    learning_rate = tf.train.exponential_decay(0.5, global_step, 5000, 0.80, staircase=True)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_step)
 
 with tf.Session(graph=graph) as session:
     tf.global_variables_initializer().run()
