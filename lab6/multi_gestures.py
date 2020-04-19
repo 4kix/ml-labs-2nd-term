@@ -4,6 +4,9 @@ from sklearn.model_selection import train_test_split
 from keras.layers import Conv2D, Flatten, MaxPooling2D, Dense, Dropout
 from keras.models import Sequential
 from keras.utils import to_categorical
+from keras.preprocessing.image import ImageDataGenerator
+import numpy as np
+
 import tensorflow as tf
 import keras.backend.tensorflow_backend as tfback
 
@@ -53,6 +56,18 @@ drop_prob_1 = 0.25
 drop_prob_2 = 0.5
 hidden_size = 512
 
+train_gen = ImageDataGenerator(
+    shear_range=0.2,
+    zoom_range=0.2)
+
+val_gen = ImageDataGenerator(
+    shear_range=0.2,
+    zoom_range=0.2)
+
+train_generator = train_gen.flow(X_train, y_train, batch_size=batch_size)
+validation_generator = val_gen.flow(np.array(X_val), y_val, batch_size=batch_size)
+
+
 model = Sequential()
 model.add(Conv2D(conv_depth_1, (kernel_size, kernel_size), border_mode='same', activation='relu', input_shape=(28, 28, 1)))
 model.add(Conv2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu'))
@@ -68,9 +83,9 @@ model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
 
-fit_data = model.fit(X_train, y_train,
-          batch_size=batch_size, nb_epoch=num_epochs,
-          verbose=2, validation_data=(X_val, y_val))
+fit_data = model.fit_generator(train_generator,
+          nb_epoch=num_epochs,
+          verbose=2, validation_data=validation_generator)
 test_data = model.evaluate(X_test, y_test, verbose=2)
 
 print('Test accuracy: {:.4f}'.format(test_data[1]))
@@ -94,4 +109,4 @@ plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
 plt.show()
 
-model.save('gestures_model.h5')
+model.save('gestures_model_aug.h5')
