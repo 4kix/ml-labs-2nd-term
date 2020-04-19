@@ -3,10 +3,11 @@ from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten
 import numpy as np
 import matplotlib.pyplot as plt
 from os import listdir
-from numpy import save
+from numpy import save, load
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
 import keras.backend.tensorflow_backend as tfback
 
@@ -46,13 +47,13 @@ def load_dataset():
     save('data/labels.npy', y)
     return X, y
 
-X_train, y_train = load_dataset()
+# X_train, y_train = load_dataset()
 
 
 # split on train, test, val sets
 
-# X_train = load('data/photos.npy')
-# y_train = load('data/labels.npy')
+X_train = load('data/photos.npy')
+y_train = load('data/labels.npy')
 
 def rgb2gray(images):
     return np.expand_dims(np.dot(images, [0.2990, 0.5870, 0.1140]), axis=3)
@@ -76,6 +77,24 @@ drop_prob_1 = 0.25
 drop_prob_2 = 0.5
 hidden_size = 512
 
+train_len = X_train.shape[0]
+val_len = X_val.shape[0]
+
+train_gen = ImageDataGenerator(
+    rescale=1. / 255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True)
+
+val_gen = ImageDataGenerator(
+    rescale=1. / 255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True)
+
+train_generator = train_gen.flow(X_train, y_train, batch_size=batch_size)
+validation_generator = val_gen.flow(np.array(X_val), y_val, batch_size=batch_size)
+
 model = Sequential()
 model.add(Conv2D(conv_depth_1, (kernel_size, kernel_size), border_mode='same', activation='relu', input_shape=(100, 100, 1)))
 model.add(Conv2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu'))
@@ -91,12 +110,12 @@ model.compile(loss='binary_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
 
-fit_data = model.fit(X_train, y_train,
-          batch_size=batch_size, nb_epoch=num_epochs,
-          verbose=1, validation_data=(X_val, y_val))
+fit_data = model.fit_generator(train_generator,
+          nb_epoch=num_epochs,
+          verbose=1, validation_data=validation_generator)
 score = model.evaluate(X_test, y_test, verbose=2)
-print('Test accuracy: {:.4f}', score[1])
-print('Test loss: {:.4f}', score[0])
+print('Test accuracy: {:.4f}'.format(score[1]))
+print('Test loss: {:.4f}'.format(score[0]))
 
 
 plt.plot(fit_data.history['accuracy'])
@@ -116,4 +135,4 @@ plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
 plt.show()
 
-model.save('dogs_vs_cats_model.h5')
+model.save('dogs_vs_cats_model_aug.h5')
