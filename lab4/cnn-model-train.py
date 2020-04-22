@@ -2,6 +2,7 @@ from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Input, Convolution2D, MaxPooling2D, Dense, Dropout, Flatten
 from keras.models import load_model
+import matplotlib.pyplot as plt
 from keras.utils import np_utils
 from scipy.io import loadmat
 
@@ -93,22 +94,42 @@ model.add(Dense(hidden_size, activation='relu'))
 model.add(Dropout(drop_prob_2))
 model.add(Dense(num_classes, activation='softmax'))
 
-model.compile(loss='categorical_crossentropy', # using the cross-entropy loss function
-              optimizer='adam', # using the Adam optimiser
-              metrics=['accuracy']) # reporting the accuracy
+model.compile(loss='categorical_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
 
-model.fit(X_train_gs, Y_train,
+
+fit_data = model.fit(X_train_gs, Y_train,
           batch_size=batch_size, nb_epoch=num_epochs,
-          verbose=2, validation_split=0.1) # ...holding out 10% of the data for validation
-score = model.evaluate(X_test_gs, Y_test, verbose=2) # Evaluate the trained model on the test set!
-print('Test accuracy: {:.4f}', score[1])
-print('Test loss: {:.4f}', score[0])
+          verbose=2, validation_split=0.1)
+train_data = model.evaluate(X_test_gs, Y_test, verbose=2)
+model.summary()
+print('Test accuracy: {:.4f}', train_data[1])
+print('Test loss: {:.4f}', train_data[0])
 
-model.save('recognizer_model.h5')
-del model
+# model.save('recognizer_model.h5')
+# del model
 
 # test load model and evaluate again
-model = load_model('recognizer_model.h5')
-score = model.evaluate(X_test_gs, Y_test, verbose=2)
-print('Test accuracy: {:.4f}', score[1])
-print('Test loss: {:.4f}', score[0])
+# model = load_model('recognizer_model.h5')
+# score = model.evaluate(X_test_gs, Y_test, verbose=2)
+# print('Test accuracy: {:.4f}', score[1])
+# print('Test loss: {:.4f}', score[0])
+
+# Plot training & validation accuracy values
+plt.plot(fit_data.history['accuracy'])
+plt.plot(fit_data.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+plt.show()
+
+# Plot training & validation loss values
+plt.plot(fit_data.history['loss'])
+plt.plot(fit_data.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+plt.show()

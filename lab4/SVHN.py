@@ -194,11 +194,11 @@ model.summary()
 model.compile(loss='sparse_categorical_crossentropy',
               optimizer="adam",
               metrics=['accuracy'])
-
+model.summary()
 # Y_train = np_utils.to_categorical(y_train) # One-hot encode the labels
 # Y_test = np_utils.to_categorical(y_test) # One-hot encode the labels
 
-fit_data = model.fit(X_train, y_train, batch_size=64, epochs=20, verbose=2)
+fit_data = model.fit(X_train, y_train, batch_size=64, epochs=1, verbose=2)
 
 
 test_data = model.evaluate(X_test, y_test)
@@ -212,23 +212,5 @@ print('Test loss: {:.4f}'.format(test_data[0]))
 # score = model.evaluate(X_test, y_test, verbose=2)
 # print(score[7:])
 
-
-# Plot training & validation accuracy values
-plt.plot(fit_data.history['accuracy'])
-plt.plot(fit_data.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
-
-# Plot training & validation loss values
-plt.plot(fit_data.history['loss'])
-plt.plot(fit_data.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
-
+print(fit_data.history.keys())
 
