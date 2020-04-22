@@ -1,7 +1,32 @@
 import matplotlib.pyplot as plt
-import keras
+# import keras
+import os ; os.environ['HDF5_DISABLE_VERSION_CHECK']='2'
+# export CUDA_VISIBLE_DEVICES=0
 import tensorflow as tf
 import tensorflow_datasets as tfds
+# from keras.backend.tensorflow_backend import set_session
+
+# tf.config.experimental.set_visible_devices(physical_devices[1:], 'GPU')
+
+
+# from tensorflow.compat.v1 import ConfigProto
+# from tensorflow.compat.v1 import InteractiveSession
+
+# gpu_options.per_process_gpu_memory_fraction = 0.85
+# physical_devices = tf.config.list_physical_devices('GPU')
+# config = tf.compat.v1.ConfigProto()
+# config.gpu_options.per_process_gpu_memory_fraction = 0.85
+physical_devices = tf.config.list_physical_devices()
+print(physical_devices)
+# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+# config.gpu_options.allow_growth = True
+# sess = tf.compat.v1.InteractiveSession(config=config)
+# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+
+
+# tf.config.gpu.set_per_process_memory_growth(True)
+
+
 
 ds, info = tfds.load('imdb_reviews/subwords8k',
                      with_info=True,
@@ -23,12 +48,12 @@ train_dataset = (train_examples
 test_dataset = (test_examples
                 .padded_batch(BATCH_SIZE, padded_shapes=([None], [])))
 
-train_dataset = (train_examples
-                 .shuffle(BUFFER_SIZE)
-                 .padded_batch(BATCH_SIZE))
+# train_dataset = (train_examples
+#                  .shuffle(BUFFER_SIZE)
+#                  .padded_batch(BATCH_SIZE))
 
-test_dataset = (test_examples
-                .padded_batch(BATCH_SIZE))
+# test_dataset = (test_examples
+#                 .padded_batch(BATCH_SIZE))
 
 # RECCUR
 model = tf.keras.Sequential([
@@ -39,10 +64,12 @@ model = tf.keras.Sequential([
 ])
 
 model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-              optimizer=tf.keras.optimizers.Adam(1e-4),
+              optimizer="adam",
               metrics=['accuracy'])
 
-history = model.fit(train_dataset, epochs=10,
+model.summary()
+
+history = model.fit(train_dataset, epochs=5,
                     validation_data=test_dataset,
                     validation_steps=30)
 
